@@ -2,29 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Papadums POS Start</title>
 <style>
-  body {
+  /* Full screen body with safe area for status bar/notch */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     font-family: Arial, sans-serif;
     background: #f0f0f0;
-    margin: 0;
-    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    box-sizing: border-box;
   }
+
+  /* Start button styling */
   #startBtn {
-    padding: 20px 40px;
+    padding: 20px 50px;
     font-size: 18px;
     font-weight: bold;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     background-color: #007BFF;
     color: #fff;
     cursor: pointer;
     transition: background 0.3s;
+    z-index: 10;
+    position: relative;
+    touch-action: manipulation; /* improve tap responsiveness */
   }
+
   #startBtn:hover {
     background-color: #0056b3;
   }
@@ -34,8 +43,23 @@
 
 <button id="startBtn">Start POS</button>
 
-<!-- Include the JS bridge -->
+<!-- Include JS bridge -->
 <script src="bridge.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const startBtn = document.getElementById("startBtn");
+  if (startBtn) {
+    startBtn.addEventListener("click", () => {
+      if (window.AndroidBridge && typeof AndroidBridge.openPage === "function") {
+        AndroidBridge.openPage('dashboard.html'); // local asset
+      } else {
+        alert("Please open this page inside the Android app.");
+      }
+    });
+  }
+});
+</script>
 
 </body>
 </html>
