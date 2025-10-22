@@ -1,7 +1,7 @@
 const CACHE_NAME = 'kiotviet-pos-v1';
 const urlsToCache = [
   './',
-  './dashboard.html',
+  './index.html',
   './style.css',
   './products.js',
   './tables_orders.js',
@@ -32,3 +32,4 @@ self.addEventListener('activate', event => {
     )
   );
 });
+
