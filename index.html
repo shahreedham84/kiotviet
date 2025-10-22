@@ -1,65 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Papadums POS Start</title>
-<style>
-  /* Full screen body with safe area for status bar/notch */
-  html, body {
-    height: 100%;
-    margin: 0;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    font-family: Arial, sans-serif;
-    background: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-sizing: border-box;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Papadums POS Launcher</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #004aad, #009ffd);
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
 
-  /* Start button styling */
-  #startBtn {
-    padding: 20px 50px;
-    font-size: 18px;
-    font-weight: bold;
-    border: none;
-    border-radius: 12px;
-    background-color: #007BFF;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.3s;
-    z-index: 10;
-    position: relative;
-    touch-action: manipulation; /* improve tap responsiveness */
-  }
+    button {
+      background: white;
+      color: #004aad;
+      border: none;
+      font-size: 1.4em;
+      font-weight: bold;
+      padding: 20px 50px;
+      border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+    }
 
-  #startBtn:hover {
-    background-color: #0056b3;
-  }
-</style>
+    button:hover {
+      background: #004aad;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+  </style>
 </head>
 <body>
+  <button id="startBtn">Start POS</button>
 
-<button id="startBtn">Start POS</button>
-
-<!-- Include JS bridge -->
-<script src="bridge.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const startBtn = document.getElementById("startBtn");
-  if (startBtn) {
-    startBtn.addEventListener("click", () => {
-      if (window.AndroidBridge && typeof AndroidBridge.openPage === "function") {
-        AndroidBridge.openPage('dashboard.html'); // local asset
-      } else {
-        alert("Please open this page inside the Android app.");
-      }
+  <script>
+    document.getElementById("startBtn").addEventListener("click", () => {
+      // Load dashboard.html from the same folder
+      window.location.href = "dashboard.html";
     });
-  }
-});
-</script>
-
+  </script>
 </body>
 </html>
