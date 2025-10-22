@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Papadums Invoice (Offline + AndroidBridge)</title>
+<title>Papadums Invoice (Offline + Intent Print)</title>
 <style>
 * { box-sizing: border-box; }
 body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
@@ -169,6 +169,8 @@ function updateStatus(ok,msg){
 
 // ---------- Load data ----------
 function loadInvoiceData(){ renderInvoice(); }
+
+// ---------- Test Printer ----------
 document.getElementById("testPrinterBtn").addEventListener("click", ()=>{
   const ipRaw = document.getElementById("printerIp").value.trim();
   if(!ipRaw) return updateStatus(false,"Enter printer IP:port");
@@ -180,20 +182,23 @@ document.getElementById("testPrinterBtn").addEventListener("click", ()=>{
   .catch(()=> updateStatus(false, `🔴 ${ipRaw} unreachable`));
 });
 
-// ---------- Print via AndroidBridge ----------
+// ---------- Print via Intent:// (silent Android) ----------
 document.getElementById("printBtn").addEventListener("click", async ()=>{
-  const ipRaw = document.getElementById("printerIp").value.trim();
-  if(!ipRaw) return updateStatus(false,"Enter printer IP:port");
   const invoice = document.getElementById("invoice");
   const canvas = await html2canvas(invoice,{scale:2,backgroundColor:"#ffffff"});
   const imgData = canvas.toDataURL("image/png");
-  if(window.AndroidBridge && typeof AndroidBridge.printWiFi==="function"){
-    try { AndroidBridge.printWiFi(ipRaw,imgData); updateStatus(true,`✅ Sent print job to ${ipRaw}`); }
-    catch(e){ updateStatus(false,"❌ AndroidBridge.printWiFi failed"); }
-    return;
-  }
-  try { const w=window.open(""); w.document.write(`<img src="${imgData}" onload="window.print(); setTimeout(()=>window.close(),500)"/>`);}
-  catch(e){ updateStatus(false,"❌ Print fallback failed"); }
+
+  const ipRaw = document.getElementById("printerIp").value.trim();
+  if(!ipRaw) return updateStatus(false,"Enter printer IP:port");
+
+  // Save IP
+  localStorage.setItem("assetPrinterIp", ipRaw);
+
+  const payload = { ip: ipRaw.split(":")[0], port: parseInt(ipRaw.split(":")[1]||"9100"), image: imgData.split(",")[1] };
+  const intentUrl = `intent://printimg/${encodeURIComponent(JSON.stringify(payload))}#Intent;scheme=papsprint;package=com.pos.printservice;end`;
+
+  window.location.href = intentUrl;
+  updateStatus(true, `✅ Sent silent print intent to ${ipRaw}`);
 });
 
 // ---------- Download PNG ----------
