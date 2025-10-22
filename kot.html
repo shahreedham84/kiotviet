@@ -5,11 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KOT Print (Asset)</title>
 <style>
-  /* Slightly increase left/right margin for better thermal cut alignment */
   @page { size: 80mm auto; margin: 4mm 5mm; } 
   body { 
     font-family: Arial, Helvetica, sans-serif; 
-    width: 76mm; /* slightly smaller than paper width for safe print area */
+    width: 76mm;
     margin: 0 auto; 
     font-size: 14px; 
     background: #fff;
@@ -17,7 +16,7 @@
   .receipt { 
     width: 100%; 
     background: #fff; 
-    padding: 10px 8px;  /* extra horizontal padding for PNG/print edge safety */
+    padding: 10px 8px;
     box-sizing: border-box;
   }
   .copy { text-align: left; font-weight: bold; margin-bottom: 3px; }
@@ -74,6 +73,7 @@
 <script>
 let injectedOrder = null;
 
+// ----- Receive KOT from AndroidBridge or external source -----
 window.receiveKOTData = function(jsonStr){
   try {
     injectedOrder = JSON.parse(jsonStr);
@@ -85,6 +85,7 @@ window.receiveKOTData = function(jsonStr){
   }
 };
 
+// Broadcast ACK to other tabs (optional)
 function sendAckToBrowser(){
   try {
     const bc = new BroadcastChannel('kot_channel');
@@ -93,6 +94,7 @@ function sendAckToBrowser(){
   } catch(e){}
 }
 
+// ----- Render KOT receipt -----
 function renderOrder(data){
   if(!data) return;
   let tableNum = data.table || "—";
@@ -118,6 +120,7 @@ function renderOrder(data){
   updateStatus(true, "✅ Data loaded");
 }
 
+// ----- Printer status -----
 function updateStatus(ok, msg){
   const dot = document.getElementById("printerStatus");
   const text = document.getElementById("printerStatusText");
@@ -129,6 +132,7 @@ function updateStatus(ok, msg){
   setTimeout(()=>{ dot.style.background="gray"; text.textContent="Status: Unknown"; }, 3000);
 }
 
+// ----- Load data from multiple sources -----
 function loadPriorityData(){
   if(injectedOrder){ renderOrder(injectedOrder); return; }
   const saved = localStorage.getItem("papadumsInvoiceData");
@@ -137,6 +141,7 @@ function loadPriorityData(){
   else { updateStatus(false, "⚠️ No data found"); }
 }
 
+// Broadcast channel listener (optional)
 try {
   const bc = new BroadcastChannel('kot_channel');
   bc.onmessage = (ev) => {
@@ -148,39 +153,48 @@ try {
   };
 } catch(e){}
 
+// ----- Buttons -----
 document.getElementById("fetchDataBtn").addEventListener("click", loadPriorityData);
 
 document.getElementById("testPrinterBtn").addEventListener("click", () => {
   const ipRaw = document.getElementById("printerIp").value.trim();
   if(!ipRaw) return updateStatus(false, "Enter printer IP:port");
-  if(window.AndroidBridge && typeof AndroidBridge.testPrinterConnection === "function"){
-    try { AndroidBridge.testPrinterConnection(ipRaw); updateStatus(true, `Testing ${ipRaw}`); } 
-    catch(e){ updateStatus(false, "Test failed"); }
-    return;
-  }
   fetch(`http://${ipRaw}`, { method:"HEAD", mode:"no-cors" }).then(()=> {
     updateStatus(true, `🟢 ${ipRaw} reachable`);
   }).catch(()=> { updateStatus(false, `🔴 ${ipRaw} unreachable`); });
 });
 
+// ----- Print KOT via AndroidBridge (MainActivity.kt compatible) -----
 document.getElementById("printBtn").addEventListener("click", async () => {
   const ipRaw = document.getElementById("printerIp").value.trim();
   if(!ipRaw) return updateStatus(false, "Enter printer IP:port");
+
+  const [ip, port] = ipRaw.split(":");
+  const printerPort = parseInt(port || "9100");
+
   const receipt = document.getElementById("receipt");
-  const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: "#ffffff" });
-  const imgData = canvas.toDataURL("image/png");
-  if(window.AndroidBridge && typeof AndroidBridge.printWiFi === "function"){
-    try { AndroidBridge.printWiFi(ipRaw, imgData); updateStatus(true, `✅ Sent print job to ${ipRaw}`); } 
-    catch(e){ updateStatus(false, `❌ AndroidBridge.printWiFi failed`); }
-    return;
-  }
   try {
-    const w = window.open("");
-    w.document.write(`<img src="${imgData}" onload="window.print(); setTimeout(()=>window.close(),500)"/>`);
-  } catch(e){ updateStatus(false, "❌ Print fallback failed"); }
+    const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png").split(",")[1]; // Base64 only
+
+    const payload = {
+      ip: ip,
+      port: printerPort,
+      image: imgData
+    };
+
+    localStorage.setItem("assetPrinterIp", ipRaw);
+
+    // Trigger Android silent print intent
+    window.location.href = `intent://printimg/${encodeURIComponent(JSON.stringify(payload))}#Intent;scheme=papsprint;end;`;
+    updateStatus(true, `✅ Print job sent to ${ipRaw}`);
+  } catch (e) {
+    updateStatus(false, "❌ Print failed");
+    console.error(e);
+  }
 });
 
-// 🆕 Download PNG (80mm)
+// ----- Download PNG -----
 document.getElementById("downloadPngBtn").addEventListener("click", async () => {
   try {
     const receipt = document.getElementById("receipt");
@@ -203,7 +217,7 @@ document.getElementById("printerIp").addEventListener("change", (e) => {
 });
 
 window.addEventListener("load", () => {
-  const savedIp = localStorage.getItem("assetPrinterIp") || localStorage.getItem("printerIp");
+  const savedIp = localStorage.getItem("assetPrinterIp");
   if(savedIp) document.getElementById("printerIp").value = savedIp;
   loadPriorityData();
 });
