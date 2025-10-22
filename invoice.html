@@ -3,38 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Papadums Invoice (Offline + Intent Print)</title>
+<title>Papadums Invoice (Offline + Android Intent Print)</title>
 <style>
-* { box-sizing: border-box; }
-body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; }
-.receipt { width: 58mm; margin: auto; padding: 6px; background: #fff; color: #000; }
-.center { text-align: center; }
-.right { text-align: right; }
-.bold { font-weight: 700; }
-.small { font-size: 11px; }
-.items { margin-top: 6px; }
-.items .row { display: grid; grid-template-columns: 1fr 55px 25px 55px; align-items: center; padding: 3px 0; border-bottom: 1px dashed #ddd; font-size: 12px; }
-.items .row.header { font-weight: 700; border-bottom: 1px solid #000; }
-.totals { margin-top: 6px; font-size: 13px; }
-.totals .line { display: flex; justify-content: space-between; padding: 2px 0; }
-.header-title { font-weight: 700; font-size: 13px; }
-.roundbox { border:1px solid #000; padding:4px 8px; border-radius:10px; font-size:12px; font-weight:700; display:inline-block; }
-.no-print { margin-top: 8px; text-align: center; }
-.no-print button, .no-print input { margin: 4px; padding: 6px 10px; border-radius: 6px; font-weight: bold; }
-.no-print input { width: 160px; text-align: center; border:1px solid #ccc; padding:6px; }
-.status-dot { width: 12px; height: 12px; border-radius: 50%; display:inline-block; background:gray; margin-top:8px; }
-.status-label { font-size:13px; color:#555; margin-top:4px; display:block; }
-.status-ip { font-size:12px; color:#333; margin-top:2px; }
-@media print {
-  html, body { width: 58mm; margin:0; padding:0; }
-  .no-print { display: none !important; }
-  .receipt { width: 58mm!important; margin: 2mm auto; padding:2mm 3mm; }
-  @page { size: 58mm auto; margin:0; }
+*{box-sizing:border-box;}
+body{font-family:Arial, sans-serif;background:#fff;margin:0;padding:0;}
+.receipt{width:58mm;margin:auto;padding:6px;background:#fff;color:#000;}
+.center{text-align:center;}
+.right{text-align:right;}
+.bold{font-weight:700;}
+.small{font-size:11px;}
+.items{margin-top:6px;}
+.items .row{display:grid;grid-template-columns:1fr 55px 25px 55px;align-items:center;padding:3px 0;border-bottom:1px dashed #ddd;font-size:12px;}
+.items .row.header{font-weight:700;border-bottom:1px solid #000;}
+.totals{margin-top:6px;font-size:13px;}
+.totals .line{display:flex;justify-content:space-between;padding:2px 0;}
+.header-title{font-weight:700;font-size:13px;}
+.roundbox{border:1px solid #000;padding:4px 8px;border-radius:10px;font-size:12px;font-weight:700;display:inline-block;}
+.no-print{margin-top:8px;text-align:center;}
+.no-print button,.no-print input{margin:4px;padding:6px 10px;border-radius:6px;font-weight:bold;}
+.no-print input{width:160px;text-align:center;border:1px solid #ccc;padding:6px;}
+.status-dot{width:12px;height:12px;border-radius:50%;display:inline-block;background:gray;margin-top:8px;}
+.status-label{font-size:13px;color:#555;margin-top:4px;display:block;}
+.status-ip{font-size:12px;color:#333;margin-top:2px;}
+@media print{
+  html,body{width:58mm;margin:0;padding:0;}
+  .no-print{display:none!important;}
+  .receipt{width:58mm!important;margin:2mm auto;padding:2mm 3mm;}
+  @page{size:58mm auto;margin:0;}
 }
 </style>
 </head>
 <body>
-
 <div class="receipt" id="invoice">
   <!-- Header -->
   <div class="center" style="margin-bottom:6px;">
@@ -68,7 +67,7 @@ body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; 
   </div>
 
   <!-- Totals -->
-  <div style="border-top:1px solid #000;margin-top:6px;padding-top:6px">
+  <div style="border-top:1px solid #000;margin-top:6px;padding-top:6px;">
     <div class="totals">
       <div class="line"><div><b>Total:</b></div><div id="totalPrice" class="right">0</div></div>
       <div class="line"><div>Discount:</div><div id="discountLabel" class="right">0</div></div>
@@ -80,7 +79,7 @@ body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; 
   <!-- Footer -->
   <div class="center" style="margin-top:6px;">
     <div class="bold">PAPADUMS INDIAN CUISINE</div>
-    <div class="small"><b>Address:</b> 35 Trần Hưng Đạo, P. Nguyễn Thái Bình, Q1, TP.HCM</div>
+    <div class="small"><b>Address:</b> 35 Trần Hưng Đạo, Q1, TP.HCM</div>
     <div class="small"><b>Phone:</b> 0946 024 520</div>
     <div class="small">WiFi: <b>PAPADUMS INDIAN CUISINE 5G</b></div>
     <div class="small">Pass: everyday</div>
@@ -90,7 +89,7 @@ body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; 
 
   <!-- Buttons -->
   <div class="no-print">
-    <input id="printerIp" placeholder="192.168.1.182:9100" value=""><br>
+    <input id="printerIp" placeholder="192.168.1.182:9100"><br>
     <button id="testPrinterBtn">🔍 Test Printer</button>
     <button id="printBtn">🖨️ Android Print</button>
     <button id="downloadPngBtn">⬇️ Download PNG</button>
@@ -102,19 +101,20 @@ body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 0; 
   </div>
 </div>
 
+<!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script>
 // ---------- Render Invoice ----------
 function renderInvoice() {
   const saved = localStorage.getItem("papadumsInvoiceData");
-  if(!saved) return console.warn("No invoice data found in localStorage");
+  if(!saved) return console.warn("No invoice data in localStorage");
   const data = JSON.parse(saved);
 
-  let tableNum = data.table ? data.table.replace(/table/i,"").trim() : "—";
-  document.getElementById("tableBox").textContent = `Ban: ${tableNum}`;
+  const tableNum = data.table ? data.table.replace(/table/i,"").trim() : "—";
+  document.getElementById("tableBox").textContent = `Bàn: ${tableNum}`;
 
-  if(!data.billNo) data.billNo = `HD00${Math.floor(1000 + Math.random() * 9000)}`;
+  if(!data.billNo) data.billNo = `HD${Math.floor(1000+Math.random()*9000)}`;
   document.getElementById("billLabel").textContent = data.billNo;
 
   const now = new Date();
@@ -124,106 +124,102 @@ function renderInvoice() {
 
   const itemsList = document.getElementById("itemsList");
   itemsList.querySelectorAll(".row:not(.header)").forEach(r=>r.remove());
-
-  if(Array.isArray(data.items) && data.items.length > 0){
+  if(Array.isArray(data.items)&&data.items.length){
     data.items.forEach(it=>{
-      const row = document.createElement("div");
-      row.className = "row";
-      const qty = it.qty || 1;
-      const price = it.price || 0;
-      row.innerHTML = `<div>${it.name}</div><div class="right">${price.toLocaleString()}</div><div class="right">${qty}</div><div class="right">${(price*qty).toLocaleString()}</div>`;
+      const qty=it.qty||1,price=it.price||0;
+      const row=document.createElement("div");
+      row.className="row";
+      row.innerHTML=`<div>${it.name}</div><div class="right">${price.toLocaleString()}</div><div class="right">${qty}</div><div class="right">${(price*qty).toLocaleString()}</div>`;
       itemsList.appendChild(row);
     });
-  } else {
-    const row = document.createElement("div");
-    row.className = "row";
-    row.innerHTML = `<div colspan="4" style="text-align:center;">No items</div>`;
-    itemsList.appendChild(row);
   }
 
-  const total = data.items?.reduce((sum,i)=>sum+(i.price*i.qty),0) || 0;
-  const discount = data.discount || 0;
-  const vat = total * 0.08;
-  const grandTotal = total + vat - discount;
+  const total=data.items?.reduce((s,i)=>s+(i.price*i.qty),0)||0;
+  const discount=data.discount||0;
+  const vat=total*0.08;
+  const grand=total+vat-discount;
+  document.getElementById("totalPrice").textContent=total.toLocaleString();
+  document.getElementById("discountLabel").textContent=discount.toLocaleString();
+  document.getElementById("vatAmount").textContent=vat.toLocaleString();
+  document.getElementById("grandTotal").textContent=grand.toLocaleString();
 
-  document.getElementById("totalPrice").textContent = total.toLocaleString();
-  document.getElementById("discountLabel").textContent = discount.toLocaleString();
-  document.getElementById("vatAmount").textContent = vat.toLocaleString();
-  document.getElementById("grandTotal").textContent = grandTotal.toLocaleString();
-
-  // Generate QR
-  new QRious({ element: document.getElementById("qrImg"), value: `Papadums Invoice ${data.billNo}`, size: 80 });
+  new QRious({element:document.getElementById("qrImg"),value:`Papadums Invoice ${data.billNo}`,size:80});
 }
 
-// ---------- Printer Status ----------
+// ---------- Status ----------
 function updateStatus(ok,msg){
-  const dot = document.getElementById("printerStatus");
-  const text = document.getElementById("printerStatusText");
-  const ipDisplay = document.getElementById("printerIpDisplay");
-  dot.style.background = ok ? "limegreen" : "red";
-  text.textContent = msg;
-  const ipRaw = document.getElementById("printerIp").value.trim();
-  ipDisplay.textContent = ipRaw ? `IP: ${ipRaw}` : "";
-  setTimeout(()=>{ dot.style.background="gray"; text.textContent="Status: Unknown"; },3000);
+  const dot=document.getElementById("printerStatus");
+  const text=document.getElementById("printerStatusText");
+  const ipDisplay=document.getElementById("printerIpDisplay");
+  dot.style.background=ok?"limegreen":"red";
+  text.textContent=msg;
+  const ipRaw=document.getElementById("printerIp").value.trim();
+  ipDisplay.textContent=ipRaw?`IP: ${ipRaw}`:"";
+  setTimeout(()=>{dot.style.background="gray";text.textContent="Status: Unknown";},3000);
 }
-
-// ---------- Load data ----------
-function loadInvoiceData(){ renderInvoice(); }
 
 // ---------- Test Printer ----------
-document.getElementById("testPrinterBtn").addEventListener("click", ()=>{
-  const ipRaw = document.getElementById("printerIp").value.trim();
-  if(!ipRaw) return updateStatus(false,"Enter printer IP:port");
-  if(window.AndroidBridge && typeof AndroidBridge.testPrinterConnection==="function"){
-    try { AndroidBridge.testPrinterConnection(ipRaw); updateStatus(true,`Testing ${ipRaw}`); } 
-    catch(e){ updateStatus(false,"Test failed"); } return;
+document.getElementById("testPrinterBtn").addEventListener("click",()=>{
+  const ip=document.getElementById("printerIp").value.trim();
+  if(!ip) return updateStatus(false,"Enter printer IP:port");
+  if(window.AndroidBridge?.testPrinterConnection){
+    try{AndroidBridge.testPrinterConnection(ip);updateStatus(true,`Testing ${ip}`);}
+    catch{updateStatus(false,"Test failed");}
+    return;
   }
-  fetch(`http://${ipRaw}`, { method:"HEAD", mode:"no-cors" }).then(()=> updateStatus(true, `🟢 ${ipRaw} reachable`))
-  .catch(()=> updateStatus(false, `🔴 ${ipRaw} unreachable`));
+  fetch(`http://${ip}`,{method:"HEAD",mode:"no-cors"})
+    .then(()=>updateStatus(true,`🟢 ${ip} reachable`))
+    .catch(()=>updateStatus(false,`🔴 ${ip} unreachable`));
 });
 
-// ---------- Print via Intent:// (silent Android) ----------
-document.getElementById("printBtn").addEventListener("click", async ()=>{
-  const invoice = document.getElementById("invoice");
-  const canvas = await html2canvas(invoice,{scale:2,backgroundColor:"#ffffff"});
-  const imgData = canvas.toDataURL("image/png");
-
-  const ipRaw = document.getElementById("printerIp").value.trim();
+// ---------- Print via Android Intent ----------
+document.getElementById("printBtn").addEventListener("click",async()=>{
+  const ipRaw=document.getElementById("printerIp").value.trim();
   if(!ipRaw) return updateStatus(false,"Enter printer IP:port");
+  localStorage.setItem("assetPrinterIp",ipRaw);
 
-  // Save IP
-  localStorage.setItem("assetPrinterIp", ipRaw);
+  // Hide UI before capture
+  document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+  await new Promise(r => setTimeout(r, 50));
 
-  const payload = { ip: ipRaw.split(":")[0], port: parseInt(ipRaw.split(":")[1]||"9100"), image: imgData.split(",")[1] };
-  const intentUrl = `intent://printimg/${encodeURIComponent(JSON.stringify(payload))}#Intent;scheme=papsprint;package=com.pos.printservice;end`;
+  const canvas = await html2canvas(document.getElementById("invoice"), {scale:2, backgroundColor:"#fff"});
 
-  window.location.href = intentUrl;
-  updateStatus(true, `✅ Sent silent print intent to ${ipRaw}`);
+  // Restore UI
+  document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+
+  const payload={ip:ipRaw.split(":")[0],port:parseInt(ipRaw.split(":")[1]||"9100"),image:canvas.toDataURL("image/png").split(",")[1]};
+  const intent=`intent://printimg/${encodeURIComponent(JSON.stringify(payload))}#Intent;scheme=papsprint;package=com.pos.printservice;end`;
+  window.location.href=intent;
+  updateStatus(true,`✅ Sent print intent to ${ipRaw}`);
 });
 
 // ---------- Download PNG ----------
-document.getElementById("downloadPngBtn").addEventListener("click", async ()=>{
+document.getElementById("downloadPngBtn").addEventListener("click",async()=>{
   try{
-    const invoice = document.getElementById("invoice");
-    const canvas = await html2canvas(invoice,{scale:2,backgroundColor:"#ffffff"});
-    const imgData = canvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = imgData;
-    link.download = `Invoice_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
+    await new Promise(r => setTimeout(r, 50));
+
+    const canvas=await html2canvas(document.getElementById("invoice"),{scale:2,backgroundColor:"#fff"});
+
+    document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
+
+    const link=document.createElement("a");
+    link.href=canvas.toDataURL("image/png");
+    link.download=`Invoice_${Date.now()}.png`;
+    document.body.appendChild(link);link.click();link.remove();
     updateStatus(true,"📸 PNG downloaded");
-  } catch(e){ updateStatus(false,"❌ PNG download failed"); }
+  }catch{updateStatus(false,"❌ PNG failed");}
 });
 
-// ---------- Save printer IP ----------
-document.getElementById("printerIp").addEventListener("change",(e)=>{ localStorage.setItem("assetPrinterIp", e.target.value.trim()); });
+// ---------- Init ----------
+document.getElementById("printerIp").addEventListener("change",e=>{
+  localStorage.setItem("assetPrinterIp",e.target.value.trim());
+});
 
-window.addEventListener("load", ()=>{
-  const savedIp = localStorage.getItem("assetPrinterIp");
-  if(savedIp) document.getElementById("printerIp").value = savedIp;
-  loadInvoiceData();
+window.addEventListener("load",()=>{
+  const savedIp=localStorage.getItem("assetPrinterIp")||"192.168.1.182:9100";
+  document.getElementById("printerIp").value=savedIp;
+  renderInvoice();
 });
 </script>
 </body>
