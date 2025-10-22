@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" translate="no" class="notranslate">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOT Print (Asset)</title>
+<style>
+  /* Slightly increase left/right margin for better thermal cut alignment */
+  @page { size: 80mm auto; margin: 4mm 5mm; } 
+  body { 
+    font-family: Arial, Helvetica, sans-serif; 
+    width: 76mm; /* slightly smaller than paper width for safe print area */
+    margin: 0 auto; 
+    font-size: 14px; 
+    background: #fff;
+  }
+  .receipt { 
+    width: 100%; 
+    background: #fff; 
+    padding: 10px 8px;  /* extra horizontal padding for PNG/print edge safety */
+    box-sizing: border-box;
+  }
+  .copy { text-align: left; font-weight: bold; margin-bottom: 3px; }
+  h2 { text-align: center; margin: 2px 0 5px 0; font-weight: 900; font-size: 18px; }
+  .meta { font-size: 14px; margin: 1px 0; display: flex; align-items: center; gap: 4px; }
+  .meta b { font-weight: bold; }
+  .code-line { font-size: 13px; margin: 4px 0 6px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 4px 0; text-align: left; border-bottom: 1px solid #000; font-size: 14px; word-break: break-word; }
+  th { font-weight: bold; }
+  .no-print { margin-top: 8px; text-align: center; }
+  .no-print button, .no-print input { margin: 4px; padding: 6px 10px; border-radius: 6px; font-weight: bold; }
+  .no-print input { width: 160px; text-align: center; border:1px solid #ccc; padding:6px; }
+  .status-dot { width: 12px; height: 12px; border-radius: 50%; display:inline-block; background:gray; margin-top:8px; }
+  .status-label { font-size:13px; color:#555; margin-top:4px; display:block; }
+  .status-ip { font-size:12px; color:#333; margin-top:2px; }
+  @media print { .no-print { display:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="receipt" id="receipt">
+  <div class="copy">Copies 1</div>
+  <h2>CHẾ BIẾN</h2>
+  <div class="meta"><b>Bàn:</b><span id="tableNum">—</span></div>
+  <div class="meta"><b>Phục vụ:</b><span id="serverName">Quỳnh Anh</span></div>
+  <div class="code-line" id="codeLine"></div>
+
+  <table>
+    <thead>
+      <tr><th>Món</th><th>DVT</th><th>SL</th></tr>
+    </thead>
+    <tbody id="itemList">
+      <tr><td colspan="3" style="text-align:center;">Waiting for data...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="no-print">
+  <input id="printerIp" placeholder="192.168.1.182:9100" value=""><br>
+  <button id="testPrinterBtn">🔍 Test Printer</button>
+  <button id="fetchDataBtn">🔄 Fetch Data</button>
+  <button id="printBtn">🖨️ Android Print</button>
+  <button id="downloadPngBtn">⬇️ Download PNG (80mm)</button>
+  <div>
+    <span class="status-dot" id="printerStatus"></span>
+    <span class="status-label" id="printerStatusText">Status: Unknown</span>
+    <span class="status-ip" id="printerIpDisplay"></span>
+  </div>
+</div>
+
+<script src="kot_data.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+let injectedOrder = null;
+
+window.receiveKOTData = function(jsonStr){
+  try {
+    injectedOrder = JSON.parse(jsonStr);
+    localStorage.setItem("papadumsInvoiceData", JSON.stringify(injectedOrder));
+    renderOrder(injectedOrder);
+    sendAckToBrowser();
+  } catch(e){
+    console.error("receiveKOTData parse failed", e);
+  }
+};
+
+function sendAckToBrowser(){
+  try {
+    const bc = new BroadcastChannel('kot_channel');
+    bc.postMessage({ type: "ACK", ok: true, ts: Date.now() });
+    bc.close();
+  } catch(e){}
+}
+
+function renderOrder(data){
+  if(!data) return;
+  let tableNum = data.table || "—";
+  tableNum = tableNum.toString().replace(/table\s*/i, "");
+  document.getElementById("tableNum").textContent = tableNum;
+  document.getElementById("serverName").textContent = data.server || "Quỳnh Anh";
+
+  const now = new Date();
+  document.getElementById("codeLine").textContent =
+    `${Math.floor(Math.random()*90+10)}-${Math.floor(Math.random()*90+10)} ${now.toLocaleTimeString('en-GB',{hour12:false})} ${now.toLocaleDateString('en-GB')}`;
+
+  const tbody = document.getElementById("itemList");
+  tbody.innerHTML = "";
+  if(!data.items || data.items.length===0){
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">No items</td></tr>`;
+  } else {
+    data.items.forEach(it=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${it.name}</td><td>${it.unit||""}</td><td>${it.qty}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  updateStatus(true, "✅ Data loaded");
+}
+
+function updateStatus(ok, msg){
+  const dot = document.getElementById("printerStatus");
+  const text = document.getElementById("printerStatusText");
+  const ipDisplay = document.getElementById("printerIpDisplay");
+  dot.style.background = ok ? "limegreen" : "red";
+  text.textContent = msg;
+  const ipRaw = document.getElementById("printerIp").value.trim();
+  ipDisplay.textContent = ipRaw ? `IP: ${ipRaw}` : "";
+  setTimeout(()=>{ dot.style.background="gray"; text.textContent="Status: Unknown"; }, 3000);
+}
+
+function loadPriorityData(){
+  if(injectedOrder){ renderOrder(injectedOrder); return; }
+  const saved = localStorage.getItem("papadumsInvoiceData");
+  if(saved){ try { renderOrder(JSON.parse(saved)); return; } catch(e){} }
+  if(window.kotFallbackData){ renderOrder(window.kotFallbackData); }
+  else { updateStatus(false, "⚠️ No data found"); }
+}
+
+try {
+  const bc = new BroadcastChannel('kot_channel');
+  bc.onmessage = (ev) => {
+    if(ev.data?.type === "ORDER_DATA" && ev.data.data){
+      localStorage.setItem("papadumsInvoiceData", JSON.stringify(ev.data.data));
+      renderOrder(ev.data.data);
+      bc.postMessage({ type: "ACK", ok: true, ts: Date.now() });
+    }
+  };
+} catch(e){}
+
+document.getElementById("fetchDataBtn").addEventListener("click", loadPriorityData);
+
+document.getElementById("testPrinterBtn").addEventListener("click", () => {
+  const ipRaw = document.getElementById("printerIp").value.trim();
+  if(!ipRaw) return updateStatus(false, "Enter printer IP:port");
+  if(window.AndroidBridge && typeof AndroidBridge.testPrinterConnection === "function"){
+    try { AndroidBridge.testPrinterConnection(ipRaw); updateStatus(true, `Testing ${ipRaw}`); } 
+    catch(e){ updateStatus(false, "Test failed"); }
+    return;
+  }
+  fetch(`http://${ipRaw}`, { method:"HEAD", mode:"no-cors" }).then(()=> {
+    updateStatus(true, `🟢 ${ipRaw} reachable`);
+  }).catch(()=> { updateStatus(false, `🔴 ${ipRaw} unreachable`); });
+});
+
+document.getElementById("printBtn").addEventListener("click", async () => {
+  const ipRaw = document.getElementById("printerIp").value.trim();
+  if(!ipRaw) return updateStatus(false, "Enter printer IP:port");
+  const receipt = document.getElementById("receipt");
+  const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: "#ffffff" });
+  const imgData = canvas.toDataURL("image/png");
+  if(window.AndroidBridge && typeof AndroidBridge.printWiFi === "function"){
+    try { AndroidBridge.printWiFi(ipRaw, imgData); updateStatus(true, `✅ Sent print job to ${ipRaw}`); } 
+    catch(e){ updateStatus(false, `❌ AndroidBridge.printWiFi failed`); }
+    return;
+  }
+  try {
+    const w = window.open("");
+    w.document.write(`<img src="${imgData}" onload="window.print(); setTimeout(()=>window.close(),500)"/>`);
+  } catch(e){ updateStatus(false, "❌ Print fallback failed"); }
+});
+
+// 🆕 Download PNG (80mm)
+document.getElementById("downloadPngBtn").addEventListener("click", async () => {
+  try {
+    const receipt = document.getElementById("receipt");
+    const canvas = await html2canvas(receipt, { scale: 2, backgroundColor: "#ffffff" });
+    const imgData = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = imgData;
+    link.download = `KOT_${Date.now()}_80mm.png`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    updateStatus(true, "📸 PNG downloaded (80mm)");
+  } catch(e) {
+    updateStatus(false, "❌ PNG download failed");
+  }
+});
+
+document.getElementById("printerIp").addEventListener("change", (e) => {
+  localStorage.setItem("assetPrinterIp", e.target.value.trim());
+});
+
+window.addEventListener("load", () => {
+  const savedIp = localStorage.getItem("assetPrinterIp") || localStorage.getItem("printerIp");
+  if(savedIp) document.getElementById("printerIp").value = savedIp;
+  loadPriorityData();
+});
+</script>
+</body>
+</html>

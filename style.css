@@ -1,0 +1,279 @@
+:root {
+  --brand-blue: #007aff;
+  --text-dark: #111;
+  --border-color: #e5e7eb;
+  --bg: #f9fafb;
+  --card-bg: #fff;
+  --inuse-bg: #cde0ff;
+  --inuse-border: #3a8aff;
+  
+  /* Darker Blue and Red Colors */
+  --dark-blue: #004a99; 
+  --light-blue-bg: #c8dcf5; 
+  --dark-red: #cc0000; 
+  --light-red-bg: #f8c9c9; 
+}
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: "Roboto","Segoe UI",sans-serif;
+  background: var(--bg);
+  color: var(--text-dark);
+  -webkit-user-select: none;
+  user-select: none;
+  overflow-y: auto;
+}
+
+/* HEADER */
+header {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 10px 14px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #000;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+header .menu {
+  font-size: 22px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  background: #fff;
+  border-bottom: 1px solid var(--border-color);
+}
+.tabs button {
+  flex: 1;
+  padding: 14px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #000;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.tabs button.active {
+  color: var(--brand-blue);
+  border-bottom: 3px solid var(--brand-blue);
+}
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 12px;
+}
+.tile {
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  text-align: center;
+  padding: 60px 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-dark);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  transition: 0.15s ease;
+  cursor: pointer;
+}
+.tile.in-use {
+  background: var(--inuse-bg);
+  border-color: var(--inuse-border);
+}
+.tile:active { transform: scale(0.97); }
+
+/* ORDER SCREEN */
+#orderScreen {
+  /* Added display properties to fix layout when displayed, as in index.html */
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+}
+.order-header {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 16px;
+}
+.order-header .close-btn {
+  font-size: 22px;
+  margin-right: 10px;
+  color: #000;
+  cursor: pointer;
+}
+.order-header .table-name {
+  flex: 1;
+  text-align: center;
+  color: #000;
+}
+
+/* SEARCH */
+.search-container {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+.searchbox {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  outline: none;
+  background: #f3f4f6;
+}
+.search-item {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+/* ORDER ITEMS - MODIFIED SECTION */
+#orderList { 
+  padding: 10px 14px; 
+  flex:1; 
+  overflow-y:auto; 
+}
+.order-item {
+  display:flex; 
+  justify-content:space-between; 
+  align-items:center;
+  padding: 12px 0; 
+  border-bottom: 1px solid #eee;
+}
+.order-name { 
+  font-weight:600; 
+  font-size:17px; 
+}
+.order-controls {
+  display: flex; 
+  align-items: center; 
+}
+/* Base style for all control buttons */
+.order-controls button {
+  padding: 8px 14px; 
+  margin: 0 4px; 
+  font-size: 18px; 
+  font-weight: 700;
+  border: 1px solid var(--border-color); 
+  border-radius: 6px; 
+  background: #f3f4f6;
+  cursor:pointer;
+  transition: all 0.2s ease-in-out; 
+}
+
+/* Styles for the Dark Blue Quantity Control Buttons (- and +) */
+.order-controls .minus, 
+.order-controls .plus {  
+    color: var(--dark-blue); 
+    border-color: var(--dark-blue); 
+    background: var(--light-blue-bg); 
+}
+.order-controls .minus:active, 
+.order-controls .plus:active {
+    background: var(--dark-blue); 
+    color: #fff;
+}
+
+/* Style for the Dark Red Remove Button (✕) */
+.order-controls .del { 
+    color: var(--dark-red); 
+    border-color: var(--dark-red); 
+    background: var(--light-red-bg); 
+    margin-left: 10px; 
+}
+.order-controls .del:active {
+    background: var(--dark-red); 
+    color: #fff;
+}
+
+/* Style for the quantity display */
+.order-controls .qty { 
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 5px;
+    min-width: 20px; 
+    text-align: center;
+}
+
+/* TOTAL & FOOTER */
+#totalBar {
+  display:flex; justify-content:space-between; padding:10px 14px; font-size:20px; font-weight:700;
+  border-top:1px solid var(--border-color);
+}
+
+/* FOOTER BUTTONS - OPTIMIZED FOR WEBVIEW */
+#footerButtons {
+  display:flex; 
+  justify-content:space-around; 
+  padding:10px 14px; 
+  /* ADDED: Extra bottom padding (20px) for native navigation bar clearance on Android */
+  padding-bottom: 20px; 
+  border-top:1px solid var(--border-color); 
+  background:#fff;
+}
+#footerButtons button { 
+    flex:1; 
+    margin:0 5px; 
+    padding:10px 0; 
+    font-size:16px; 
+    cursor:pointer; 
+    background: var(--dark-blue);
+    color: #fff;
+    border: 1px solid var(--dark-blue);
+    border-radius: 8px; 
+    font-weight: 600;
+    transition: background 0.1s ease;
+}
+#footerButtons button:active {
+    background: #003a7a; 
+}
+
+/* HAMBURGER MENU - OPTIMIZED FOR WEBVIEW */
+.hamburger-menu div { 
+  /* Resetting default menu item padding to 16px top/bottom */
+  padding: 16px; 
+  font-weight:600; 
+  cursor:pointer; 
+  border-bottom:1px solid #eee;
+}
+
+/* 1. STYLES FOR THE STATIC LABEL (Quỳnh Anh) - Status Bar Clearance */
+.hamburger-menu .menu-label-top {
+  display: flex; /* Use flex to align name and arrow */
+  justify-content: space-between; /* Push arrow to the right edge */
+  align-items: center; 
+  
+  /* Status bar clearance (45px) + 10px padding for label top = 55px. This provides reliable top space. */
+  padding-top: 55px; 
+  padding-bottom: 10px; /* 10px gap below the label */
+  
+  font-size: 20px; /* Bigger font size for the name */
+  font-weight: 700; /* Bolder look for the name */
+  cursor: default; /* Not clickable */
+  border-bottom: 1px solid var(--border-color); /* Separator line */
+}
+
+/* Styles for the down arrow within the label */
+.hamburger-menu .menu-label-top .dropdown-arrow {
+    font-size: 14px; /* Smaller size for the arrow */
+    color: #999;
+}
+
+/* 2. STYLES FOR THE FIRST CLICKABLE ITEM (Clear all items) */
+/* This is the div that comes immediately after the menu-label-top */
+.hamburger-menu div:nth-child(2) { 
+  /* Standard padding for menu items (16px) */
+  padding-top: 16px; 
+  cursor: pointer;
+}
