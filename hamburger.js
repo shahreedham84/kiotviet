@@ -1,104 +1,78 @@
-function initHamburgerMenu(button, onClearAll) {
+function initHamburgerMenu(button) {
   if (!button) return;
 
-  // Ensure button is on top and clickable
-  Object.assign(button.style, {
-    cursor: "pointer",
-    userSelect: "none",
-    position: "relative",
-    zIndex: "10000", // force top layer
-    pointerEvents: "auto",
-  });
+  button.style.cursor = "pointer";
+  button.style.userSelect = "none";
+  button.style.zIndex = "3000";
 
-  // Create popup (only once)
-  let popup = document.getElementById("menuPopup");
-  if (!popup) {
-    popup = document.createElement("div");
-    popup.id = "menuPopup";
-    Object.assign(popup.style, {
-      position: "absolute",
-      top: "45px",
-      left: "10px",
+  let sidebar = document.getElementById("menuSidebar");
+  if (!sidebar) {
+    sidebar = document.createElement("div");
+    sidebar.id = "menuSidebar";
+    Object.assign(sidebar.style, {
+      position: "fixed",
+      top: "0",
+      left: "-100%",
+      width: "70%",
+      height: "100%",
       background: "#fff",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-      padding: "10px",
+      boxShadow: "4px 0 16px rgba(0,0,0,0.25)",
+      transition: "left 0.3s ease-in-out",
+      zIndex: "2500",
+      padding: "60px 20px 20px 20px", // 🟢 added top padding (60px)
       display: "none",
-      zIndex: "9999",
+      flexDirection: "column",
+      justifyContent: "flex-start",
+      alignItems: "flex-start",
+      overflowY: "auto",
     });
 
-    popup.innerHTML = `
-      <button id="clearAllTables"
-        style="width:180px;padding:10px;background:#ff3b30;color:#fff;
-               border:none;border-radius:6px;font-weight:bold;">
-        🧹 Clear All Tables
+    sidebar.innerHTML = `
+      <h2 style="margin:0 0 20px;font-size:22px;color:#007aff;">Menu</h2>
+      <button id="adminPanelBtn"
+        style="width:100%;padding:14px;margin-bottom:10px;
+               background:#007aff;color:#fff;border:none;
+               border-radius:8px;font-weight:bold;font-size:16px;">
+        ⚙️ Admin Panel
       </button>
     `;
-    document.body.appendChild(popup);
+
+    document.body.appendChild(sidebar);
   }
 
-  // Safe toggle handler
+  let isOpen = false;
+
+  const openMenu = () => {
+    sidebar.style.display = "flex";
+    requestAnimationFrame(() => {
+      sidebar.style.left = "0";
+    });
+    isOpen = true;
+  };
+
+  const closeMenu = () => {
+    sidebar.style.left = "-100%";
+    setTimeout(() => {
+      if (!isOpen) sidebar.style.display = "none";
+    }, 300);
+    isOpen = false;
+  };
+
+  const toggleMenu = () => (isOpen ? closeMenu() : openMenu());
+
   button.addEventListener("click", (e) => {
-    e.preventDefault();
     e.stopPropagation();
-
-    // Calculate position relative to button
-    const rect = button.getBoundingClientRect();
-    popup.style.top = rect.bottom + 6 + "px";
-    popup.style.left = rect.left + "px";
-
-    // Toggle visibility
-    popup.style.display = popup.style.display === "block" ? "none" : "block";
+    toggleMenu();
   });
 
-  // Hide when clicking outside
   document.addEventListener("click", (e) => {
-    if (!popup.contains(e.target) && !button.contains(e.target)) {
-      popup.style.display = "none";
+    if (isOpen && !sidebar.contains(e.target) && !button.contains(e.target)) {
+      closeMenu();
     }
   });
 
-  // Handle Clear button
-  popup.querySelector("#clearAllTables").addEventListener("click", async () => {
-    if (!confirm("🧹 Clear all tables and Firestore orders?")) return;
-
-    try {
-      // Pause Firestore sync
-      if (window.unsubscribeFirestore) {
-        window.unsubscribeFirestore();
-        console.log("🔇 Firestore listener paused");
-      }
-
-      // Local clear
-      window.tableOrders = {};
-      localStorage.removeItem("tableOrders");
-      if (typeof onClearAll === "function") onClearAll();
-
-      // Firebase clear
-      if (window.db) {
-        const { collection, getDocs, deleteDoc, doc } =
-          await import("https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js");
-        const snapshot = await getDocs(collection(window.db, "orders"));
-        for (const d of snapshot.docs) {
-          await deleteDoc(doc(window.db, "orders", d.id));
-        }
-        console.log("🧹 Firestore orders cleared");
-      }
-
-      // Resume Firestore listener
-      setTimeout(() => {
-        if (window.listenForRealtimeUpdates)
-          window.listenForRealtimeUpdates();
-        console.log("🔊 Firestore listener resumed");
-      }, 2000);
-
-      alert("✅ All tables cleared (local + online)");
-      popup.style.display = "none";
-      if (typeof renderTables === "function") renderTables();
-    } catch (err) {
-      console.error("❌ Error clearing tables:", err);
-    }
+  sidebar.querySelector("#adminPanelBtn").addEventListener("click", () => {
+    window.location.href = "admin_panel.html";
   });
 }
 
