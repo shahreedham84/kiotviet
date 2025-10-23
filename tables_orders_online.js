@@ -1,51 +1,145 @@
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue } from "firebase/database";
+// ============================
+// 🧾 KIOTVIET - Tables + Orders (Firestore Sync)
+// ============================
 
-// --- Firebase config ---
-const firebaseConfig = {
-  apiKey: "AIzaSyDKH545vwgFzpptWTQrZRo8oOvewJA1EQY",
-  authDomain: "kiotviet-83c52.firebaseapp.com",
-  databaseURL: "https://kiotviet-83c52-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kiotviet-83c52",
-  storageBucket: "kiotviet-83c52.firebasestorage.app",
-  messagingSenderId: "246074890153",
-  appId: "1:246074890153:web:03e5a82205892d00a156b8"
+import { saveOrdersOnline } from "./firebase.js";
+
+// --- Globals ---
+window.tableOrders = JSON.parse(localStorage.getItem("tableOrders") || "{}");
+window.activeTable = null;
+
+// --- Initialize UI ---
+export function initTablesOrders() {
+  renderTables("all");
+}
+
+// --- Render Tables Grid ---
+export function renderTables(filter = "all") {
+  const grid = document.getElementById("tableGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  for (let i = 1; i <= 12; i++) {
+    const tableId = `Table ${i}`;
+    const orders = window.tableOrders[tableId] || [];
+    const total = orders.reduce((sum, o) => sum + (o.price || 0) * (o.qty || 1), 0);
+
+    const isInUse = orders.length > 0;
+    if (filter === "inuse" && !isInUse) continue;
+    if (filter === "available" && isInUse) continue;
+
+    const div = document.createElement("div");
+    div.className = `table-card ${isInUse ? "inuse" : "available"}`;
+    div.innerHTML = `
+      <div class="table-name">${tableId}</div>
+      <div class="table-total">${isInUse ? total.toLocaleString() + " ₫" : "Empty"}</div>
+    `;
+
+    div.addEventListener("click", () => openOrderScreen(tableId));
+    grid.appendChild(div);
+  }
+}
+
+// --- Open Order Screen ---
+export function openOrderScreen(tableId) {
+  const orderScreen = document.getElementById("orderScreen");
+  const mainScreen = document.getElementById("mainScreen");
+  const tableName = document.getElementById("currentTable");
+  const orderList = document.getElementById("orderList");
+
+  if (!orderScreen || !mainScreen) return;
+
+  window.activeTable = tableId;
+  tableName.textContent = tableId;
+  mainScreen.style.display = "none";
+  orderScreen.style.display = "flex";
+
+  renderOrderList();
+
+  document.getElementById("closeOrder").onclick = () => {
+    mainScreen.style.display = "block";
+    orderScreen.style.display = "none";
+    window.activeTable = null;
+    renderTables(document.querySelector(".tabs button.active")?.dataset.filter || "all");
+  };
+}
+
+// --- Render Order List ---
+export function renderOrderList() {
+  const orderList = document.getElementById("orderList");
+  if (!orderList) return;
+
+  const tableId = window.activeTable;
+  const orders = window.tableOrders[tableId] || [];
+
+  orderList.innerHTML = orders
+    .map(
+      (item, i) => `
+    <div class="order-item">
+      <span>${item.name}</span>
+      <span>${item.qty} x ${item.price.toLocaleString()} ₫</span>
+      <button onclick="removeOrderItem(${i})">🗑️</button>
+    </div>
+  `
+    )
+    .join("");
+
+  const total = orders.reduce((sum, o) => sum + (o.price || 0) * (o.qty || 1), 0);
+  document.getElementById("totalAmount").textContent = total.toLocaleString() + " ₫";
+}
+
+// --- Add Item to Current Table ---
+export function addOrderItem(name, price) {
+  const tableId = window.activeTable;
+  if (!tableId) return;
+
+  window.tableOrders[tableId] = window.tableOrders[tableId] || [];
+  window.tableOrders[tableId].push({ name, price, qty: 1 });
+
+  saveOrdersLocally();
+  saveOrdersOnline(tableId);
+  renderOrderList();
+  renderTables();
+}
+
+// --- Remove Item from Table ---
+window.removeOrderItem = function (index) {
+  const tableId = window.activeTable;
+  if (!tableId || !window.tableOrders[tableId]) return;
+
+  window.tableOrders[tableId].splice(index, 1);
+  if (window.tableOrders[tableId].length === 0) delete window.tableOrders[tableId];
+
+  saveOrdersLocally();
+  saveOrdersOnline(tableId);
+  renderOrderList();
+  renderTables();
 };
 
-// --- Initialize Firebase ---
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-
-// --- Load offline orders ---
-window.tableOrders = JSON.parse(localStorage.getItem('tableOrders') || '{}');
-
-// --- Save orders locally and push per table to Firebase ---
-export function saveOrdersOnline(tableId) {
-  localStorage.setItem('tableOrders', JSON.stringify(window.tableOrders));
-  if(tableId && window.tableOrders[tableId]) {
-    set(ref(db, `tableOrders/${tableId}`), window.tableOrders[tableId]);
-  }
+// --- Local Save ---
+function saveOrdersLocally() {
+  localStorage.setItem("tableOrders", JSON.stringify(window.tableOrders));
 }
 
-// --- Sync each table from Firebase individually ---
-for(let i=1; i<=12; i++){
-  const tableId = `Table ${i}`;
-  onValue(ref(db, `tableOrders/${tableId}`), snapshot => {
-    const data = snapshot.val() || [];
-    window.tableOrders[tableId] = data;
-    localStorage.setItem('tableOrders', JSON.stringify(window.tableOrders));
-
-    if(typeof renderOrderList==='function' && window.activeTable===tableId) renderOrderList();
-    if(typeof renderTables==='function') renderTables(document.querySelector('.tabs button.active')?.dataset.filter || 'all');
-  });
-}
-
-// --- Optional: Auto-sync all tables every 5s ---
-setInterval(()=>{
-  for(let i=1;i<=12;i++){
+// --- Auto-Sync + Create Tables in Firestore ---
+export async function autoSyncAll() {
+  for (let i = 1; i <= 12; i++) {
     const tableId = `Table ${i}`;
-    if(window.tableOrders[tableId]) {
-      set(ref(db, `tableOrders/${tableId}`), window.tableOrders[tableId]);
+    if (!window.tableOrders[tableId]) {
+      // Create empty table automatically if missing
+      window.tableOrders[tableId] = [];
     }
+    await saveOrdersOnline(tableId);
   }
-}, 5000);
+}
+
+// --- Optional periodic auto-sync (every 10s) ---
+setInterval(() => {
+  autoSyncAll();
+}, 10000);
+
+// --- Auto init after DOM ready ---
+document.addEventListener("DOMContentLoaded", () => {
+  initTablesOrders();
+});
