@@ -1,8 +1,7 @@
 // ============================
-// 🔥 Firebase Firestore version (replaces Realtime Database)
+// 🔥 KIOTVIET Firestore Sync (Multi-user + Offline Ready)
 // ============================
 
-// Load Firebase via CDN (modular v12+)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
 import {
   getFirestore,
@@ -27,35 +26,37 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- Save a single order (same API as before) ---
-export async function saveOrder(orderId, orderData) {
+// --- Save each table’s order ---
+export async function saveOrdersOnline(tableId) {
+  if (!window.tableOrders || !window.tableOrders[tableId]) return;
   try {
-    await setDoc(doc(db, "orders", orderId), orderData, { merge: true });
-    console.log(`✅ Order ${orderId} saved to Firestore`);
+    await setDoc(doc(db, "tables", tableId), {
+      orders: window.tableOrders[tableId],
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    console.log(`✅ Synced ${tableId} to Firestore`);
   } catch (err) {
-    console.error("❌ Firestore save error:", err);
+    console.error("❌ Firestore sync error:", err);
   }
 }
 
-// --- Realtime listener for all orders ---
-export function onOrdersUpdate(callback) {
-  const ordersCol = collection(db, "orders");
-  onSnapshot(ordersCol, (snapshot) => {
+// --- Listen for live updates from Firestore ---
+export function startRealtimeSync() {
+  const tablesCol = collection(db, "tables");
+  onSnapshot(tablesCol, (snapshot) => {
     const data = {};
     snapshot.forEach((doc) => {
-      data[doc.id] = doc.data();
+      data[doc.id] = doc.data().orders || [];
     });
-    callback(data);
-  });
-}
+    // Merge into local memory
+    window.tableOrders = data;
+    localStorage.setItem("tableOrders", JSON.stringify(window.tableOrders));
+    console.log("🔄 Realtime sync:", data);
 
-// --- Optional: load all existing orders once ---
-export async function getAllOrders() {
-  const ordersCol = collection(db, "orders");
-  const snapshot = await getDocs(ordersCol);
-  const data = {};
-  snapshot.forEach((doc) => {
-    data[doc.id] = doc.data();
+    // Refresh UI if available
+    if (typeof renderTables === "function")
+      renderTables(document.querySelector(".tabs button.active")?.dataset.filter || "all");
+    if (typeof renderOrderList === "function" && window.activeTable)
+      renderOrderList();
   });
-  return data;
 }
