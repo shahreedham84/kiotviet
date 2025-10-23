@@ -1,20 +1,12 @@
-// IMPORTANT: This function initializes the hamburger menu and must be loaded first.
-
-/**
- * Initializes the hamburger menu functionality.
- * @param {HTMLElement} button The button element that toggles the menu.
- * @param {function} callback The function to execute when the 'Clear all items' button is clicked.
- */
+// hamburger.js
 function initHamburgerMenu(button, callback) {
-    // Create the main menu container
     const menu = document.createElement('div');
     menu.className = 'hamburger-menu';
-    // Set initial fixed positioning and hidden state
     menu.style.position = 'fixed';
     menu.style.top = '0';
     menu.style.left = '0';
     menu.style.height = '100%';
-    menu.style.width = '0'; // Hidden state
+    menu.style.width = '0';
     menu.style.background = '#fff';
     menu.style.boxShadow = '2px 0 6px rgba(0,0,0,0.1)';
     menu.style.overflow = 'hidden';
@@ -24,34 +16,60 @@ function initHamburgerMenu(button, callback) {
 
     let isOpen = false;
 
-    // Helper functions for menu state
-    function openMenu(){ menu.style.width='50%'; isOpen=true; }
-    function closeMenu(){ menu.style.width='0'; isOpen=false; }
+    function openMenu() { menu.style.width = '50%'; isOpen = true; }
+    function closeMenu() { menu.style.width = '0'; isOpen = false; }
 
-    // Toggle logic for the hamburger button
-    button.addEventListener('click', e=>{
+    button.addEventListener('click', e => {
         e.stopPropagation();
         isOpen ? closeMenu() : openMenu();
     });
 
-    // Close menu when clicking outside
-    document.addEventListener('click', ()=>{ if(isOpen) closeMenu(); });
-    // Prevent menu from closing when clicking inside
-    menu.addEventListener('click', e=>e.stopPropagation());
+    document.addEventListener('click', () => { if (isOpen) closeMenu(); });
+    menu.addEventListener('click', e => e.stopPropagation());
 
-    // --- Menu Item 1: Static Label (Quỳnh Anh) with Arrow ---
+    // --- Menu Header (staff name) ---
     const labelItem = document.createElement('div');
-    // Using HTML to include the name and the down arrow (▼)
-    labelItem.innerHTML = 'Quỳnh Anh <span class="dropdown-arrow">&#x25BC;</span>'; 
-    labelItem.className = 'menu-label-top'; 
+    labelItem.innerHTML = 'Quỳnh Anh <span class="dropdown-arrow">&#x25BC;</span>';
+    labelItem.className = 'menu-label-top';
     menu.appendChild(labelItem);
 
-    // --- Menu Item 2: Clickable Action (Clear all items) ---
+    // --- Menu Action: Clear all items ---
     const actionItem = document.createElement('div');
     actionItem.textContent = 'Clear all items';
-    actionItem.addEventListener('click', ()=>{ 
-        if(callback) callback(); 
-        closeMenu(); 
+    actionItem.style.cursor = 'pointer';
+    actionItem.style.padding = '12px';
+    actionItem.style.fontWeight = '500';
+    actionItem.style.borderTop = '1px solid #eee';
+    actionItem.addEventListener('click', () => {
+        if (typeof callback === 'function') callback();
+
+        // ✅ Clear localStorage + memory completely
+        localStorage.removeItem('tableOrders');
+        window.tableOrders = {};
+        console.log("✅ All tables cleared.");
+
+        // ✅ Re-render UI
+        if (typeof renderTables === 'function') {
+            renderTables(document.querySelector('.tabs button.active')?.dataset.filter || 'all');
+        }
+
+        // Optional visual confirmation
+        const toast = document.createElement('div');
+        toast.textContent = '✅ All items cleared';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = '#007aff';
+        toast.style.color = '#fff';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '8px';
+        toast.style.fontWeight = '500';
+        toast.style.zIndex = '2000';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+
+        closeMenu();
     });
     menu.appendChild(actionItem);
 }
