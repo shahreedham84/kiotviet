@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --blue: #007aff;
+      --bg: #f9fafb;
+      --white: #fff;
+      --text: #111;
+      --border: #e5e7eb;
+    }
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      background: var(--blue);
+      color: var(--white);
+      width: 100%;
+      text-align: center;
+      padding: 14px 0;
+      font-size: 20px;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    main {
+      width: 90%;
+      max-width: 500px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: transform 0.15s ease;
+    }
+    .card:active {
+      transform: scale(0.98);
+    }
+    .card-icon {
+      font-size: 24px;
+      width: 32px;
+      text-align: center;
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+    .sales-box {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid var(--border);
+    }
+    .sales-box h3 {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 18px;
+    }
+    .sales-box p {
+      font-size: 22px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>⚙️ Admin Panel</header>
+
+  <main>
+    <div class="card" id="clearAllBtn">
+      <div class="card-icon">🧹</div>
+      <div class="card-title">Clear All Items</div>
+    </div>
+
+    <div class="card" id="invoiceHistoryBtn">
+      <div class="card-icon">🧾</div>
+      <div class="card-title">Invoice History</div>
+    </div>
+
+    <div class="card" id="totalSalesBtn">
+      <div class="card-icon">💰</div>
+      <div class="card-title">Total Sales (Today)</div>
+    </div>
+
+    <div class="card" id="settingsBtn">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">Settings</div>
+    </div>
+
+    <div class="sales-box" id="salesBox">
+      <h3>Today's Sales</h3>
+      <p id="salesValue">₫0</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+    import {
+      getFirestore, collection, getDocs, deleteDoc, doc,
+    } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+    // 🔥 Firebase setup
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkY1iwprnsEUgyFAjl0bOIUPU46R4YRjo",
+      authDomain: "kiotviet-a41b1.firebaseapp.com",
+      projectId: "kiotviet-a41b1",
+      storageBucket: "kiotviet-a41b1.firebasestorage.app",
+      messagingSenderId: "166511834957",
+      appId: "1:166511834957:web:d24f894f9d26bafddca904",
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🧹 Clear All Orders
+    document.getElementById("clearAllBtn").addEventListener("click", async () => {
+      if (!confirm("Clear ALL tables and orders (local + Firebase)?")) return;
+      try {
+        localStorage.removeItem("tableOrders");
+        const snapshot = await getDocs(collection(db, "orders"));
+        for (const d of snapshot.docs) await deleteDoc(doc(db, "orders", d.id));
+        alert("✅ Cleared all orders!");
+      } catch (err) {
+        console.error("❌ Error clearing:", err);
+        alert("Error clearing data!");
+      }
+    });
+
+    // 🧾 Invoice History
+    document.getElementById("invoiceHistoryBtn").addEventListener("click", () => {
+      window.location.href = "invoice_history.html";
+    });
+
+    // ⚙️ Settings
+    document.getElementById("settingsBtn").addEventListener("click", () => {
+      window.location.href = "settings.html";
+    });
+
+    // 💰 Total Sales (example — fetch local and Firebase)
+    async function calculateSales() {
+      let total = 0;
+      const local = JSON.parse(localStorage.getItem("tableOrders") || "{}");
+      for (const t of Object.values(local)) {
+        if (Array.isArray(t.items))
+          for (const item of t.items) total += Number(item.price || 0);
+      }
+
+      try {
+        const snapshot = await getDocs(collection(db, "orders"));
+        for (const docu of snapshot.docs) {
+          const data = docu.data();
+          if (data.total) total += Number(data.total);
+        }
+      } catch (e) {
+        console.log("Offline or Firebase error — showing local only");
+      }
+
+      document.getElementById("salesValue").textContent = "₫" + total.toLocaleString();
+    }
+    calculateSales();
+  </script>
+</body>
+</html>
