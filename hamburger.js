@@ -1,86 +1,105 @@
-import { saveOrdersOnline } from "./firebase.js";
+function initHamburgerMenu(button, onClearAll) {
+  if (!button) return;
 
-function initHamburgerMenu(button, callback) {
-    const menu = document.createElement('div');
-    menu.className = 'hamburger-menu';
-    menu.style.position = 'fixed';
-    menu.style.top = '0';
-    menu.style.left = '0';
-    menu.style.height = '100%';
-    menu.style.width = '0';
-    menu.style.background = '#fff';
-    menu.style.boxShadow = '2px 0 6px rgba(0,0,0,0.1)';
-    menu.style.overflow = 'hidden';
-    menu.style.transition = 'width 0.25s ease';
-    menu.style.zIndex = '1000';
-    document.body.appendChild(menu);
+  // Ensure button is on top and clickable
+  Object.assign(button.style, {
+    cursor: "pointer",
+    userSelect: "none",
+    position: "relative",
+    zIndex: "10000", // force top layer
+    pointerEvents: "auto",
+  });
 
-    let isOpen = false;
-    const openMenu = () => { menu.style.width = '50%'; isOpen = true; };
-    const closeMenu = () => { menu.style.width = '0'; isOpen = false; };
-
-    button.addEventListener('click', e => {
-        e.stopPropagation();
-        isOpen ? closeMenu() : openMenu();
+  // Create popup (only once)
+  let popup = document.getElementById("menuPopup");
+  if (!popup) {
+    popup = document.createElement("div");
+    popup.id = "menuPopup";
+    Object.assign(popup.style, {
+      position: "absolute",
+      top: "45px",
+      left: "10px",
+      background: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      padding: "10px",
+      display: "none",
+      zIndex: "9999",
     });
 
-    document.addEventListener('click', () => { if (isOpen) closeMenu(); });
-    menu.addEventListener('click', e => e.stopPropagation());
+    popup.innerHTML = `
+      <button id="clearAllTables"
+        style="width:180px;padding:10px;background:#ff3b30;color:#fff;
+               border:none;border-radius:6px;font-weight:bold;">
+        🧹 Clear All Tables
+      </button>
+    `;
+    document.body.appendChild(popup);
+  }
 
-    const labelItem = document.createElement('div');
-    labelItem.innerHTML = 'Quỳnh Anh <span class="dropdown-arrow">&#x25BC;</span>';
-    labelItem.className = 'menu-label-top';
-    menu.appendChild(labelItem);
+  // Safe toggle handler
+  button.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    // --- Menu Action: Clear all items ---
-    const actionItem = document.createElement('div');
-    actionItem.textContent = 'Clear all items';
-    actionItem.style.cursor = 'pointer';
-    actionItem.style.padding = '12px';
-    actionItem.style.fontWeight = '500';
-    actionItem.style.borderTop = '1px solid #eee';
-    actionItem.addEventListener('click', async () => {
-        if (typeof callback === 'function') callback();
+    // Calculate position relative to button
+    const rect = button.getBoundingClientRect();
+    popup.style.top = rect.bottom + 6 + "px";
+    popup.style.left = rect.left + "px";
 
-        // ✅ Clear local data
-        window.tableOrders = {};
-        localStorage.removeItem('tableOrders');
+    // Toggle visibility
+    popup.style.display = popup.style.display === "block" ? "none" : "block";
+  });
 
-        // ✅ Sync empty orders to Firestore for all 12 tables
-        for (let i = 1; i <= 12; i++) {
-            const tableId = `Table ${i}`;
-            try {
-                await saveOrdersOnline(tableId); // pushes empty []
-            } catch (err) {
-                console.error(`Failed to clear ${tableId}:`, err);
-            }
+  // Hide when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!popup.contains(e.target) && !button.contains(e.target)) {
+      popup.style.display = "none";
+    }
+  });
+
+  // Handle Clear button
+  popup.querySelector("#clearAllTables").addEventListener("click", async () => {
+    if (!confirm("🧹 Clear all tables and Firestore orders?")) return;
+
+    try {
+      // Pause Firestore sync
+      if (window.unsubscribeFirestore) {
+        window.unsubscribeFirestore();
+        console.log("🔇 Firestore listener paused");
+      }
+
+      // Local clear
+      window.tableOrders = {};
+      localStorage.removeItem("tableOrders");
+      if (typeof onClearAll === "function") onClearAll();
+
+      // Firebase clear
+      if (window.db) {
+        const { collection, getDocs, deleteDoc, doc } =
+          await import("https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js");
+        const snapshot = await getDocs(collection(window.db, "orders"));
+        for (const d of snapshot.docs) {
+          await deleteDoc(doc(window.db, "orders", d.id));
         }
+        console.log("🧹 Firestore orders cleared");
+      }
 
-        // ✅ Re-render UI
-        if (typeof renderTables === 'function') {
-            renderTables(document.querySelector('.tabs button.active')?.dataset.filter || 'all');
-        }
+      // Resume Firestore listener
+      setTimeout(() => {
+        if (window.listenForRealtimeUpdates)
+          window.listenForRealtimeUpdates();
+        console.log("🔊 Firestore listener resumed");
+      }, 2000);
 
-        // ✅ Toast confirmation
-        const toast = document.createElement('div');
-        toast.textContent = '✅ All tables cleared (synced to cloud)';
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = '#007aff';
-        toast.style.color = '#fff';
-        toast.style.padding = '10px 20px';
-        toast.style.borderRadius = '8px';
-        toast.style.fontWeight = '500';
-        toast.style.zIndex = '2000';
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
-
-        closeMenu();
-    });
-
-    menu.appendChild(actionItem);
+      alert("✅ All tables cleared (local + online)");
+      popup.style.display = "none";
+      if (typeof renderTables === "function") renderTables();
+    } catch (err) {
+      console.error("❌ Error clearing tables:", err);
+    }
+  });
 }
 
-export { initHamburgerMenu };
+window.initHamburgerMenu = initHamburgerMenu;
