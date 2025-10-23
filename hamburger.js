@@ -1,4 +1,5 @@
-// hamburger.js
+import { saveOrdersOnline } from "./firebase.js";
+
 function initHamburgerMenu(button, callback) {
     const menu = document.createElement('div');
     menu.className = 'hamburger-menu';
@@ -15,9 +16,8 @@ function initHamburgerMenu(button, callback) {
     document.body.appendChild(menu);
 
     let isOpen = false;
-
-    function openMenu() { menu.style.width = '50%'; isOpen = true; }
-    function closeMenu() { menu.style.width = '0'; isOpen = false; }
+    const openMenu = () => { menu.style.width = '50%'; isOpen = true; };
+    const closeMenu = () => { menu.style.width = '0'; isOpen = false; };
 
     button.addEventListener('click', e => {
         e.stopPropagation();
@@ -27,7 +27,6 @@ function initHamburgerMenu(button, callback) {
     document.addEventListener('click', () => { if (isOpen) closeMenu(); });
     menu.addEventListener('click', e => e.stopPropagation());
 
-    // --- Menu Header (staff name) ---
     const labelItem = document.createElement('div');
     labelItem.innerHTML = 'Quỳnh Anh <span class="dropdown-arrow">&#x25BC;</span>';
     labelItem.className = 'menu-label-top';
@@ -40,22 +39,31 @@ function initHamburgerMenu(button, callback) {
     actionItem.style.padding = '12px';
     actionItem.style.fontWeight = '500';
     actionItem.style.borderTop = '1px solid #eee';
-    actionItem.addEventListener('click', () => {
+    actionItem.addEventListener('click', async () => {
         if (typeof callback === 'function') callback();
 
-        // ✅ Clear localStorage + memory completely
-        localStorage.removeItem('tableOrders');
+        // ✅ Clear local data
         window.tableOrders = {};
-        console.log("✅ All tables cleared.");
+        localStorage.removeItem('tableOrders');
+
+        // ✅ Sync empty orders to Firestore for all 12 tables
+        for (let i = 1; i <= 12; i++) {
+            const tableId = `Table ${i}`;
+            try {
+                await saveOrdersOnline(tableId); // pushes empty []
+            } catch (err) {
+                console.error(`Failed to clear ${tableId}:`, err);
+            }
+        }
 
         // ✅ Re-render UI
         if (typeof renderTables === 'function') {
             renderTables(document.querySelector('.tabs button.active')?.dataset.filter || 'all');
         }
 
-        // Optional visual confirmation
+        // ✅ Toast confirmation
         const toast = document.createElement('div');
-        toast.textContent = '✅ All items cleared';
+        toast.textContent = '✅ All tables cleared (synced to cloud)';
         toast.style.position = 'fixed';
         toast.style.bottom = '20px';
         toast.style.left = '50%';
@@ -67,9 +75,12 @@ function initHamburgerMenu(button, callback) {
         toast.style.fontWeight = '500';
         toast.style.zIndex = '2000';
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+        setTimeout(() => toast.remove(), 2500);
 
         closeMenu();
     });
+
     menu.appendChild(actionItem);
 }
+
+export { initHamburgerMenu };
