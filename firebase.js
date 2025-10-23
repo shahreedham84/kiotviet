@@ -1,26 +1,61 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+// ============================
+// 🔥 Firebase Firestore version (replaces Realtime Database)
+// ============================
 
-// Firebase Config
+// Load Firebase via CDN (modular v12+)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  doc,
+  setDoc,
+  onSnapshot,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+
+// --- Firebase Config ---
 const firebaseConfig = {
-  apiKey: "AIzaSyDKH545vwgFzpptWTQrZRo8oOvewJA1EQY",
-  authDomain: "kiotviet-83c52.firebaseapp.com",
-  databaseURL: "https://kiotviet-83c52-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "kiotviet-83c52",
-  storageBucket: "kiotviet-83c52.firebasestorage.app",
-  messagingSenderId: "246074890153",
-  appId: "1:246074890153:web:03e5a82205892d00a156b8"
+  apiKey: "AIzaSyCkY1iwprnsEUgyFAjl0bOIUPU46R4YRjo",
+  authDomain: "kiotviet-a41b1.firebaseapp.com",
+  projectId: "kiotviet-a41b1",
+  storageBucket: "kiotviet-a41b1.firebasestorage.app",
+  messagingSenderId: "166511834957",
+  appId: "1:166511834957:web:d24f894f9d26bafddca904",
 };
 
+// --- Initialize Firebase ---
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const db = getFirestore(app);
 
-export function saveOrder(orderId, orderData){
-  set(ref(db, 'orders/' + orderId), orderData)
-    .then(()=> console.log(`Order ${orderId} saved!`))
-    .catch(err=> console.error("Firebase save error:", err));
+// --- Save a single order (same API as before) ---
+export async function saveOrder(orderId, orderData) {
+  try {
+    await setDoc(doc(db, "orders", orderId), orderData, { merge: true });
+    console.log(`✅ Order ${orderId} saved to Firestore`);
+  } catch (err) {
+    console.error("❌ Firestore save error:", err);
+  }
 }
 
-export function onOrdersUpdate(callback){
-  onValue(ref(db,'orders/'), snapshot=> callback(snapshot.val()));
+// --- Realtime listener for all orders ---
+export function onOrdersUpdate(callback) {
+  const ordersCol = collection(db, "orders");
+  onSnapshot(ordersCol, (snapshot) => {
+    const data = {};
+    snapshot.forEach((doc) => {
+      data[doc.id] = doc.data();
+    });
+    callback(data);
+  });
+}
+
+// --- Optional: load all existing orders once ---
+export async function getAllOrders() {
+  const ordersCol = collection(db, "orders");
+  const snapshot = await getDocs(ordersCol);
+  const data = {};
+  snapshot.forEach((doc) => {
+    data[doc.id] = doc.data();
+  });
+  return data;
 }
