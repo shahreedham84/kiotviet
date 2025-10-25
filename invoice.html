@@ -6,7 +6,7 @@
 <title>Papadums Invoice (Offline + Android Intent Print)</title>
 <style>
 *{box-sizing:border-box;}
-body{font-family:Arial, sans-serif;background:#fff;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#fff;margin:0;padding:0;}
 .receipt{width:58mm;margin:auto;padding:6px;background:#fff;color:#000;}
 .center{text-align:center;}
 .right{text-align:right;}
@@ -25,6 +25,7 @@ body{font-family:Arial, sans-serif;background:#fff;margin:0;padding:0;}
 .status-dot{width:12px;height:12px;border-radius:50%;display:inline-block;background:gray;margin-top:8px;}
 .status-label{font-size:13px;color:#555;margin-top:4px;display:block;}
 .status-ip{font-size:12px;color:#333;margin-top:2px;}
+#companyLogoBox img{width:60px;height:auto;max-height:60px;object-fit:contain;border-radius:6px;}
 @media print{
   html,body{width:58mm;margin:0;padding:0;}
   .no-print{display:none!important;}
@@ -35,8 +36,14 @@ body{font-family:Arial, sans-serif;background:#fff;margin:0;padding:0;}
 </head>
 <body>
 <div class="receipt" id="invoice">
+
+  <!-- Logo -->
+  <div class="center" id="companyLogoBox" style="margin-bottom:4px;display:none;">
+    <img id="companyLogoImg">
+  </div>
+
   <!-- Header -->
-  <div class="center" style="margin-bottom:6px;">
+  <div class="center" id="headerBox" style="margin-bottom:6px;">
     <div class="header-title">PAPADUMS INDIAN CUISINE</div>
     <div class="small"><b>Address:</b> 35 Trần Hưng Đạo, P. Nguyễn Thái Bình, Q1, TP.HCM</div>
     <div class="small"><b>Phone:</b> 0946 024 520</div>
@@ -70,29 +77,30 @@ body{font-family:Arial, sans-serif;background:#fff;margin:0;padding:0;}
   <div style="border-top:1px solid #000;margin-top:6px;padding-top:6px;">
     <div class="totals">
       <div class="line"><div><b>Total:</b></div><div id="totalPrice" class="right">0</div></div>
-      <div class="line"><div>Discount:</div><div id="discountLabel" class="right">0</div></div>
-      <div class="line"><div>VAT (8%):</div><div id="vatAmount" class="right">0</div></div>
+      <div class="line" id="discountLine"><div>Discount:</div><div id="discountLabel" class="right">0</div></div>
+      <div class="line" id="vatLine"><div id="vatLabel">VAT (8%):</div><div id="vatAmount" class="right">0</div></div>
       <div class="line" style="font-weight:700;font-size:15px;"><div>TOTAL:</div><div id="grandTotal" class="right">0</div></div>
     </div>
   </div>
 
   <!-- Footer -->
-  <div class="center" style="margin-top:6px;">
+  <div class="center" id="footerBox" style="margin-top:6px;">
     <div class="bold">PAPADUMS INDIAN CUISINE</div>
     <div class="small"><b>Address:</b> 35 Trần Hưng Đạo, Q1, TP.HCM</div>
     <div class="small"><b>Phone:</b> 0946 024 520</div>
-    <div class="small">WiFi: <b>PAPADUMS INDIAN CUISINE 5G</b></div>
-    <div class="small">Pass: everyday</div>
+    <div class="small" id="wifiLine1">WiFi: <b>PAPADUMS INDIAN CUISINE 5G</b></div>
+    <div class="small" id="wifiLine2">Pass: everyday</div>
     <canvas id="qrImg" width="80" height="80" style="margin:4px 0;"></canvas>
-    <div class="small" style="margin-top:4px;">Invoice includes VAT</div>
+    <div class="small" id="footerMessage" style="margin-top:4px;">Invoice includes VAT</div>
   </div>
 
-  <!-- Buttons -->
+  <!-- Controls -->
   <div class="no-print">
     <input id="printerIp" placeholder="192.168.1.182:9100"><br>
     <button id="testPrinterBtn">🔍 Test Printer</button>
     <button id="printBtn">🖨️ Android Print</button>
     <button id="downloadPngBtn">⬇️ Download PNG</button>
+    
     <div>
       <span class="status-dot" id="printerStatus"></span>
       <span class="status-label" id="printerStatusText">Status: Unknown</span>
@@ -105,15 +113,56 @@ body{font-family:Arial, sans-serif;background:#fff;margin:0;padding:0;}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script>
-// ---------- Render Invoice ----------
+function applyCompanySettings() {
+  const s = JSON.parse(localStorage.getItem('invoiceSettings') || '{}');
+
+  // Logo
+  const logoBox = document.getElementById('companyLogoBox');
+  const logoImg = document.getElementById('companyLogoImg');
+  if (s.logoData && s.logoEnabled) {
+    logoBox.style.display = 'block';
+    logoImg.src = s.logoData;
+  } else {
+    logoBox.style.display = 'none';
+  }
+
+  // Header info
+  document.querySelector('.header-title').textContent = s.companyName || 'PAPADUMS INDIAN CUISINE';
+  document.querySelector('#headerBox .small:nth-child(2)').innerHTML = `<b>Address:</b> ${s.companyAddress || '35 Trần Hưng Đạo, P. Nguyễn Thái Bình, Q1, TP.HCM'}`;
+  document.querySelector('#headerBox .small:nth-child(3)').innerHTML = `<b>Phone:</b> ${s.companyPhone || '0946 024 520'}`;
+
+  // Footer info
+  const footerBox = document.getElementById('footerBox');
+  footerBox.querySelector('.bold').textContent = s.companyName || 'PAPADUMS INDIAN CUISINE';
+  footerBox.querySelectorAll('.small')[0].innerHTML = `<b>Address:</b> ${s.companyAddress || '35 Trần Hưng Đạo, Q1, TP.HCM'}`;
+  footerBox.querySelectorAll('.small')[1].innerHTML = `<b>Phone:</b> ${s.companyPhone || '0946 024 520'}`;
+
+  // Wi-Fi
+  const wifi1 = document.getElementById('wifiLine1');
+  const wifi2 = document.getElementById('wifiLine2');
+  if (s.wifiEnabled) {
+    wifi1.style.display = '';
+    wifi2.style.display = '';
+    wifi1.innerHTML = `WiFi: <b>${s.wifiName || 'PAPADUMS INDIAN CUISINE 5G'}</b>`;
+    wifi2.innerHTML = `Pass: ${s.wifiPassword || 'everyday'}`;
+  } else {
+    wifi1.style.display = 'none';
+    wifi2.style.display = 'none';
+  }
+
+  // Footer message
+  document.getElementById('footerMessage').textContent = s.footerText || 'Invoice includes VAT';
+}
+
+// Render Invoice
 function renderInvoice() {
   const saved = localStorage.getItem("papadumsInvoiceData");
   if(!saved) return console.warn("No invoice data in localStorage");
   const data = JSON.parse(saved);
+  const s = JSON.parse(localStorage.getItem('invoiceSettings') || '{}');
 
   const tableNum = data.table ? data.table.replace(/table/i,"").trim() : "—";
   document.getElementById("tableBox").textContent = `Bàn: ${tableNum}`;
-
   if(!data.billNo) data.billNo = `HD${Math.floor(1000+Math.random()*9000)}`;
   document.getElementById("billLabel").textContent = data.billNo;
 
@@ -122,6 +171,7 @@ function renderInvoice() {
   document.getElementById("timeInTime").textContent = now.toLocaleTimeString('en-GB',{hour12:false});
   document.getElementById("timeOutLabel").textContent = now.toLocaleTimeString('en-GB',{hour12:false});
 
+  // Items
   const itemsList = document.getElementById("itemsList");
   itemsList.querySelectorAll(".row:not(.header)").forEach(r=>r.remove());
   if(Array.isArray(data.items)&&data.items.length){
@@ -134,19 +184,39 @@ function renderInvoice() {
     });
   }
 
-  const total=data.items?.reduce((s,i)=>s+(i.price*i.qty),0)||0;
-  const discount=data.discount||0;
-  const vat=total*0.08;
-  const grand=total+vat-discount;
-  document.getElementById("totalPrice").textContent=total.toLocaleString();
-  document.getElementById("discountLabel").textContent=discount.toLocaleString();
-  document.getElementById("vatAmount").textContent=vat.toLocaleString();
-  document.getElementById("grandTotal").textContent=grand.toLocaleString();
+  // Totals
+  const subtotal=data.items?.reduce((s,i)=>s+(i.price*i.qty),0)||0;
+  let discount=0,vat=0;
+
+  // VAT
+  if(s.vatEnabled){
+    const vatValue=parseFloat((s.vatValue||"0").toString().replace("%",""))||0;
+    vat=subtotal*vatValue/100;
+    document.getElementById("vatLabel").innerText=`VAT (${vatValue}%)`;
+    document.getElementById("vatAmount").innerText=vat.toLocaleString();
+    document.getElementById("vatLine").style.display='';
+  } else {
+    document.getElementById("vatLine").style.display='none';
+  }
+
+  // Discount
+  if(s.discountEnabled){
+    const discValue=parseFloat((s.discountValue||"0").toString().replace("%",""))||0;
+    discount=subtotal*discValue/100;
+    document.getElementById("discountLabel").innerText=discount.toLocaleString();
+    document.getElementById("discountLine").style.display='';
+  } else {
+    document.getElementById("discountLine").style.display='none';
+  }
+
+  const grand=subtotal+vat-discount;
+  document.getElementById("totalPrice").innerText=subtotal.toLocaleString();
+  document.getElementById("grandTotal").innerText=grand.toLocaleString();
 
   new QRious({element:document.getElementById("qrImg"),value:`Papadums Invoice ${data.billNo}`,size:80});
 }
 
-// ---------- Status ----------
+// Printer UI
 function updateStatus(ok,msg){
   const dot=document.getElementById("printerStatus");
   const text=document.getElementById("printerStatusText");
@@ -158,67 +228,45 @@ function updateStatus(ok,msg){
   setTimeout(()=>{dot.style.background="gray";text.textContent="Status: Unknown";},3000);
 }
 
-// ---------- Test Printer ----------
+// Buttons
 document.getElementById("testPrinterBtn").addEventListener("click",()=>{
   const ip=document.getElementById("printerIp").value.trim();
   if(!ip) return updateStatus(false,"Enter printer IP:port");
-  if(window.AndroidBridge?.testPrinterConnection){
-    try{AndroidBridge.testPrinterConnection(ip);updateStatus(true,`Testing ${ip}`);}
-    catch{updateStatus(false,"Test failed");}
-    return;
-  }
   fetch(`http://${ip}`,{method:"HEAD",mode:"no-cors"})
-    .then(()=>updateStatus(true,`🟢 ${ip} reachable`))
-    .catch(()=>updateStatus(false,`🔴 ${ip} unreachable`));
+  .then(()=>updateStatus(true,`🟢 ${ip} reachable`))
+  .catch(()=>updateStatus(false,`🔴 ${ip} unreachable`));
 });
 
-// ---------- Print via Android Intent ----------
 document.getElementById("printBtn").addEventListener("click",async()=>{
   const ipRaw=document.getElementById("printerIp").value.trim();
   if(!ipRaw) return updateStatus(false,"Enter printer IP:port");
   localStorage.setItem("assetPrinterIp",ipRaw);
-
-  // Hide UI before capture
-  document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
-  await new Promise(r => setTimeout(r, 50));
-
-  const canvas = await html2canvas(document.getElementById("invoice"), {scale:2, backgroundColor:"#fff"});
-
-  // Restore UI
-  document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
-
+  document.querySelectorAll('.no-print').forEach(el=>el.style.display='none');
+  await new Promise(r=>setTimeout(r,50));
+  const canvas=await html2canvas(document.getElementById("invoice"),{scale:2,backgroundColor:"#fff"});
+  document.querySelectorAll('.no-print').forEach(el=>el.style.display='');
   const payload={ip:ipRaw.split(":")[0],port:parseInt(ipRaw.split(":")[1]||"9100"),image:canvas.toDataURL("image/png").split(",")[1]};
   const intent=`intent://printimg/${encodeURIComponent(JSON.stringify(payload))}#Intent;scheme=papsprint;package=com.pos.printservice;end`;
   window.location.href=intent;
   updateStatus(true,`✅ Sent print intent to ${ipRaw}`);
 });
 
-// ---------- Download PNG ----------
 document.getElementById("downloadPngBtn").addEventListener("click",async()=>{
-  try{
-    document.querySelectorAll('.no-print').forEach(el => el.style.display = 'none');
-    await new Promise(r => setTimeout(r, 50));
-
-    const canvas=await html2canvas(document.getElementById("invoice"),{scale:2,backgroundColor:"#fff"});
-
-    document.querySelectorAll('.no-print').forEach(el => el.style.display = '');
-
-    const link=document.createElement("a");
-    link.href=canvas.toDataURL("image/png");
-    link.download=`Invoice_${Date.now()}.png`;
-    document.body.appendChild(link);link.click();link.remove();
-    updateStatus(true,"📸 PNG downloaded");
-  }catch{updateStatus(false,"❌ PNG failed");}
-});
-
-// ---------- Init ----------
-document.getElementById("printerIp").addEventListener("change",e=>{
-  localStorage.setItem("assetPrinterIp",e.target.value.trim());
+  document.querySelectorAll('.no-print').forEach(el=>el.style.display='none');
+  await new Promise(r=>setTimeout(r,50));
+  const canvas=await html2canvas(document.getElementById("invoice"),{scale:2,backgroundColor:"#fff"});
+  document.querySelectorAll('.no-print').forEach(el=>el.style.display='');
+  const link=document.createElement("a");
+  link.href=canvas.toDataURL("image/png");
+  link.download=`Invoice_${Date.now()}.png`;
+  link.click();
+  updateStatus(true,"📸 PNG downloaded");
 });
 
 window.addEventListener("load",()=>{
   const savedIp=localStorage.getItem("assetPrinterIp")||"192.168.1.182:9100";
   document.getElementById("printerIp").value=savedIp;
+  applyCompanySettings();
   renderInvoice();
 });
 </script>
