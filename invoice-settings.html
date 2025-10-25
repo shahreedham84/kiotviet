@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Settings</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f9f9f9;margin:0;padding:10px;}
+.container{max-width:380px;margin:auto;background:#fff;padding:15px;border-radius:10px;box-shadow:0 0 5px rgba(0,0,0,0.1);}
+h2{text-align:center;margin-bottom:15px;}
+label{font-weight:bold;display:block;margin-top:10px;}
+input[type="text"],input[type="number"],input[type="password"],textarea{
+  width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin-top:4px;
+}
+.toggle{margin-top:8px;}
+button{margin-top:15px;width:100%;padding:10px;font-weight:bold;border:none;
+  border-radius:6px;background:#007bff;color:white;}
+button:hover{background:#0066cc;}
+img{width:60px;height:auto;margin-top:8px;border-radius:6px;object-fit:contain;}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>🧾 Invoice Settings</h2>
+
+  <label>Company Name</label>
+  <input type="text" id="companyNameInput" placeholder="Enter company name">
+
+  <label>Address</label>
+  <textarea id="addressInput" placeholder="Enter address"></textarea>
+
+  <label>Phone</label>
+  <input type="text" id="phoneInput" placeholder="Enter phone number">
+
+  <label>Footer Text</label>
+  <input type="text" id="footerInput" placeholder="Thank you for dining!">
+
+  <!-- Logo Upload -->
+  <label>Logo</label>
+  <input type="file" id="logoInput" accept="image/*">
+  <img id="logoPreview" src="" alt="Logo Preview" style="display:none;">
+  <div class="toggle">
+    <input type="checkbox" id="logoToggle"> Enable Logo
+  </div>
+
+  <!-- VAT & Discount -->
+  <div class="toggle">
+    <input type="checkbox" id="vatToggle"> Enable VAT
+  </div>
+  <input type="number" id="vatValue" placeholder="VAT %" min="0" max="50" step="0.1">
+
+  <div class="toggle">
+    <input type="checkbox" id="discountToggle"> Enable Discount
+  </div>
+  <input type="number" id="discountValue" placeholder="Discount %" min="0" max="50" step="0.1">
+
+  <!-- WiFi Settings -->
+  <div class="toggle" style="margin-top:12px;">
+    <input type="checkbox" id="wifiToggle"> Show Wi-Fi Info
+  </div>
+  <label>Wi-Fi Name</label>
+  <input type="text" id="wifiName" placeholder="Enter Wi-Fi name">
+  <label>Password</label>
+  <input type="password" id="wifiPassword" placeholder="Enter Wi-Fi password">
+
+  <button id="saveBtn">💾 Save Settings</button>
+  <button onclick="window.location.href='invoice.html'">⬅️ Back to Invoice</button>
+</div>
+
+<script>
+const logoInput=document.getElementById("logoInput");
+const logoPreview=document.getElementById("logoPreview");
+
+// 🖼️ Preview + encode logo
+logoInput.addEventListener("change",()=>{
+  const file=logoInput.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    logoPreview.src=e.target.result;
+    logoPreview.style.display='block';
+  };
+  reader.readAsDataURL(file);
+});
+
+// 💾 Save settings
+document.getElementById("saveBtn").addEventListener("click",()=>{
+  const settings={
+    companyName:companyNameInput.value.trim(),
+    companyAddress:addressInput.value.trim(),
+    companyPhone:phoneInput.value.trim(),
+    footerText:footerInput.value.trim(),
+    vatEnabled:vatToggle.checked,
+    vatValue:parseFloat(vatValue.value)||0,
+    discountEnabled:discountToggle.checked,
+    discountValue:parseFloat(discountValue.value)||0,
+    logoEnabled:logoToggle.checked,
+    logoData:logoPreview.src||"",
+    wifiEnabled:wifiToggle.checked,
+    wifiName:wifiName.value.trim(),
+    wifiPassword:wifiPassword.value.trim()
+  };
+  localStorage.setItem("invoiceSettings",JSON.stringify(settings));
+  alert("✅ Settings saved!");
+});
+
+// 📦 Load saved settings
+window.addEventListener("load",()=>{
+  const s=JSON.parse(localStorage.getItem("invoiceSettings")||"{}");
+  if(s.companyName)companyNameInput.value=s.companyName;
+  if(s.companyAddress)addressInput.value=s.companyAddress;
+  if(s.companyPhone)phoneInput.value=s.companyPhone;
+  if(s.footerText)footerInput.value=s.footerText;
+
+  if(s.vatEnabled)vatToggle.checked=true;
+  if(s.vatValue)vatValue.value=s.vatValue;
+
+  if(s.discountEnabled)discountToggle.checked=true;
+  if(s.discountValue)discountValue.value=s.discountValue;
+
+  if(s.logoData){logoPreview.src=s.logoData;logoPreview.style.display='block';}
+  if(s.logoEnabled)logoToggle.checked=true;
+
+  if(s.wifiEnabled)wifiToggle.checked=true;
+  if(s.wifiName)wifiName.value=s.wifiName;
+  if(s.wifiPassword)wifiPassword.value=s.wifiPassword;
+});
+</script>
+</body>
+</html>
