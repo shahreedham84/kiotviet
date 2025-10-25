@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f9f9f9;
+  margin: 0;
+  padding: 10px;
+}
+.container {
+  max-width: 380px;
+  margin: auto;
+  background: #fff;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: #fff;
+}
+button:hover {
+  background: #0066cc;
+}
+.back {
+  background: #aaa;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>⚙️ Settings</h2>
+
+  <button onclick="window.location.href='invoice-settings.html'">🧾 Invoice Settings</button>
+  <button onclick="window.location.href='printer-settings.html'">🖨️ Printer Settings</button>
+
+  <button class="back" onclick="window.location.href='index.html'">⬅️ Back to Dashboard</button>
+</div>
+</body>
+</html>
